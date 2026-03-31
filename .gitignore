@@ -1,0 +1,32 @@
+# Binaries
+/tmp/
+/bin/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go build artifacts
+*.test
+*.out
+
+# Air (live reload) temp files
+.air.toml.tmp
+
+# Logs
+*.log
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Env / secrets
+.env
+.env.*
