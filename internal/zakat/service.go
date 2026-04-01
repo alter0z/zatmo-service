@@ -1,9 +1,12 @@
 package zakat
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type Service interface {
-	List(ctx context.Context) ([]Zakat, error)
+	List(ctx context.Context, villagerID string, name string, category *bool, date *time.Time) ([]Zakat, error)
 	// Create(ctx context.Context, input CreateZakatInput) (Zakat, error)
 }
 
@@ -24,8 +27,8 @@ func NewService(r Repository) Service {
 // 	Category   bool    `json:"category"`
 // }
 
-func (s *service) List(ctx context.Context) ([]Zakat, error) {
-	return s.repo.List(ctx)
+func (s *service) List(ctx context.Context, villagerID string, name string, category *bool, date *time.Time) ([]Zakat, error) {
+	return s.repo.List(ctx, villagerID, name, category, date)
 }
 
 // func (s *service) Create(ctx context.Context, input CreateZakatInput) (Zakat, error) {

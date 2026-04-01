@@ -2,6 +2,7 @@ package zakat
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	// "github.com/google/uuid"
@@ -21,8 +22,40 @@ func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	// group.POST("", h.create)
 }
 
+type ListQuery struct {
+    VillagerID string `form:"villager_id"`
+    Name       string `form:"name"`
+    Category   *bool  `form:"category"`
+    Date       string `form:"date"`
+}
+
 func (h *Handler) list(c *gin.Context) {
-	z, err := h.svc.List(c.Request.Context())
+	var q ListQuery
+	if err := c.ShouldBindQuery(&q); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	var datePtr *time.Time
+	if q.Date != "" {
+		t, err := time.Parse("2006-01-02", q.Date)
+		if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD"})
+				return
+		}
+		datePtr = &t
+	}
+
+	z, err := h.svc.List(
+		c.Request.Context(),
+		q.VillagerID,
+		q.Name,
+		q.Category,
+		datePtr,
+	)
+	if z == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "data not found"})
+		return
+	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list zakat" + err.Error()})
 		return

@@ -22,7 +22,7 @@ type Zakat struct {
 }
 
 type Repository interface {
-	List(ctx context.Context) ([]Zakat, error)
+	List(ctx context.Context, villagerID string, name string, category *bool, date *time.Time) ([]Zakat, error)
 	// Create(ctx context.Context, z *Zakat) error
 }
 
@@ -34,23 +34,67 @@ func NewRepository(db *pgxpool.Pool) Repository {
 	return &pgRepository{db: db}
 }
 
-func (r *pgRepository) List(ctx context.Context) ([]Zakat, error) {
-	rows, err := r.db.Query(ctx, GetZakatAll)
+func (r *pgRepository) List(
+	ctx context.Context,
+	villagerID string,
+	name string,
+	category *bool,
+	date *time.Time) ([]Zakat, error) {
+	var args [4]interface{}
+
+	// $1 :: uuid
+	if villagerID == "" {
+			args[0] = nil
+	} else {
+			args[0] = villagerID
+	}
+
+	// $2 :: text
+	if name == "" {
+			args[1] = nil
+	} else {
+			args[1] = name
+	}
+
+	// $3 :: boolean
+	if category == nil {
+			args[2] = nil
+	} else {
+			args[2] = *category
+	}
+
+	// $4 :: date
+	if date == nil {
+			args[3] = nil
+	} else {
+			args[3] = date.Format("2006-01-02")
+	}
+
+	rows, err := r.db.Query(ctx, GetZakat,
+			args[0], args[1], args[2], args[3],
+	)
 	if err != nil {
-		return nil, err
+			return nil, err
 	}
 	defer rows.Close()
 
 	var result []Zakat
 	for rows.Next() {
-		var z Zakat
-		if err := rows.Scan(
-			&z.ID, &z.CreatedAt, &z.UpdatedAt, &z.Villager,
-			&z.Name, &z.TotalPeople, &z.Amount, &z.Charity, &z.Category,
-		); err != nil {
-			return nil, err
-		}
-		result = append(result, z)
+			var z Zakat
+			if err := rows.Scan(
+					&z.ID,
+					&z.CreatedAt,
+					&z.UpdatedAt,
+					&z.Villager,
+					&z.Name,
+					&z.TotalPeople,
+					&z.Amount,
+					&z.Charity,
+					&z.Category,
+			); err != nil {
+					return nil, err
+			}
+			result = append(result, z)
 	}
 	return result, rows.Err()
 }
