@@ -16,8 +16,14 @@ type Summary struct {
 	TotalCashAmount 	int  		`json:"total_cash_amount"`
 }
 
+type Receiver struct {
+	TotalNeedy     int `json:"total_needy"`
+	TotalDestitute int `json:"total_destitute"`
+}
+
 type Repository interface {
 	GetSummaryCounts(ctx context.Context, villagerID string) (Summary, error)
+	GetReceiverCounts(ctx context.Context) (Receiver, error)
 }
 
 type pgRepository struct {
@@ -48,4 +54,14 @@ func (r *pgRepository) GetSummaryCounts(ctx context.Context, villagerID string) 
 		&s.TotalCashAmount,
 	)
 	return s, err
+}
+
+func (r *pgRepository) GetReceiverCounts(ctx context.Context) (Receiver, error) {
+	var receiver Receiver
+
+	err := r.db.QueryRow(ctx, GetReceiverCounts).Scan(
+		&receiver.TotalNeedy,
+		&receiver.TotalDestitute,
+	)
+	return receiver, err
 }

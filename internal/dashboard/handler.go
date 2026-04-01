@@ -17,6 +17,7 @@ func NewHandler(svc Service) *Handler {
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	group := r.Group("/dashboard")
 	group.GET("", h.getSummaryCounts)
+	group.GET("/receivers", h.getReceiverCounts)
 }
 
 func (h *Handler) getSummaryCounts(c *gin.Context) {
@@ -27,4 +28,13 @@ func (h *Handler) getSummaryCounts(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, z)
+}
+
+func (h *Handler) getReceiverCounts(c *gin.Context) {
+	receiver, err := h.svc.GetReceiverCounts(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get receiver counts" + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, receiver)
 }
