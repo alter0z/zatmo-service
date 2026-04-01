@@ -12,7 +12,7 @@ type Zakat struct {
 	ID          uuid.UUID `json:"id"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	// VillagerID  uuid.UUID `json:"villager_id"`
+	VillagerID  uuid.UUID `json:"villager_id"`
 	Villager  	string 		`json:"villager"`
 	Name        string    `json:"name"`
 	TotalPeople int16     `json:"total_people"`
@@ -21,9 +21,18 @@ type Zakat struct {
 	Category    bool      `json:"category"`
 }
 
+type Villager struct {
+	ID        uuid.UUID `json:"id"`
+	Villager	string 		`json:"villager"`
+
+}
+
 type Repository interface {
 	List(ctx context.Context, villagerID string, name string, category *bool, date *time.Time) ([]Zakat, error)
-	// Create(ctx context.Context, z *Zakat) error
+	GetVillager(ctx context.Context) ([]Villager, error)
+	Create(ctx context.Context, z *Zakat) error
+	Update(ctx context.Context, z *Zakat) error
+	Delete(ctx context.Context, id string) error
 }
 
 type pgRepository struct {
@@ -99,12 +108,51 @@ func (r *pgRepository) List(
 	return result, rows.Err()
 }
 
-// func (r *pgRepository) Create(ctx context.Context, z *Zakat) error {
-// 	err := r.db.QueryRow(ctx, `
-// 		INSERT INTO zakat (villager, name, total_people, amount, charity, category)
-// 		VALUES ($1, $2, $3, $4, $5, $6)
-// 		RETURNING id, created_at, updated_at`,
-// 		z.Villager, z.Name, z.TotalPeople, z.Amount, z.Charity, z.Category,
-// 	).Scan(&z.ID, &z.CreatedAt, &z.UpdatedAt)
-// 	return err
-// }
+func (r *pgRepository) GetVillager(ctx context.Context) ([]Villager, error) {
+	rows, err := r.db.Query(ctx, GetVillager)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var villagers []Villager
+	for rows.Next() {
+		var v Villager
+		if err := rows.Scan(&v.ID, &v.Villager); err != nil {
+			return nil, err
+		}
+		villagers = append(villagers, v)
+	}
+	if len(villagers) == 0 {
+		return nil, nil
+	}
+	return villagers, rows.Err()
+}
+
+func (r *pgRepository) Create(ctx context.Context, z *Zakat) error {
+	err := r.db.QueryRow(ctx, CreateZakat,
+		z.VillagerID,
+		z.Name,
+		z.TotalPeople,
+		z.TotalPeople,           
+		z.Charity,
+		z.Category,
+	).Scan(&z.ID, &z.CreatedAt, &z.UpdatedAt)
+	return err
+}
+
+func (r *pgRepository) Update(ctx context.Context, z *Zakat) error {
+	return r.db.QueryRow(ctx, UpdateZakat,
+		z.ID,
+		z.Name,
+		z.TotalPeople,
+		z.TotalPeople,
+		z.Charity,
+		z.Category,
+	).Scan(&z.CreatedAt, &z.UpdatedAt)
+}
+
+func (r *pgRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.db.Exec(ctx, DeleteZakat, id)
+	return err
+}

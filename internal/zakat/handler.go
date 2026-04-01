@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	// "github.com/google/uuid"
+	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -17,9 +17,12 @@ func NewHandler(svc Service) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
-	group := r.Group("/zakat")
+	group := r.Group("/api/v1/zakat")
 	group.GET("", h.list)
-	// group.POST("", h.create)
+	group.GET("/villager", h.getVillager)
+	group.POST("", h.create)
+	group.PUT("/:id", h.update)
+	group.DELETE("/:id", h.delete)
 }
 
 type ListQuery struct {
@@ -62,29 +65,84 @@ func (h *Handler) list(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, z)
 }
+func (h *Handler) getVillager(c *gin.Context) {
+	v, err := h.svc.GetVillager(c.Request.Context())
+	if v == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "data not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get villager" + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, v)
+}
 
-// func (h *Handler) create(c *gin.Context) {
-// 	var in CreateZakatInput
-// 	if err := c.ShouldBindJSON(&in); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	vID, err := uuid.Parse(in.VillagerID)
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid villager_id"})
-// 		return
-// 	}
-// 	z := Zakat{
-// 		VillagerID:  vID,
-// 		Name:        in.Name,
-// 		TotalPeople: in.TotalPeople,
-// 		Amount:      in.Amount,
-// 		Charity:     in.Charity,
-// 		Category:    in.Category,
-// 	}
-// 	if err := h.svc.Create(c.Request.Context(), &z); err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create zakat"})
-// 		return
-// 	}
-// 	c.JSON(http.StatusCreated, z)
-// }
+func (h *Handler) create(c *gin.Context) {
+	var in CreateZakatInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// vID, err := uuid.Parse(in.VillagerID)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "invalid villager_id"})
+	// 	return
+	// }
+	z := Zakat{
+		VillagerID:  in.VillagerID,
+		Name:        in.Name,
+		TotalPeople: in.TotalPeople,
+		Charity:     in.Charity,
+		Category:    in.Category,
+	}
+	z, err := h.svc.Create(c.Request.Context(), in)
+  if err != nil {
+    c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create zakat " + err.Error()})
+    return
+  }
+	c.JSON(http.StatusOK, gin.H{
+		"status": true,
+		"data":   z,
+	})
+}
+
+func (h *Handler) update(c *gin.Context) {
+	id := c.Param("id")
+
+	var in UpdateZakatInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ID, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	in.ID = ID
+
+	z, err := h.svc.Update(c.Request.Context(), in)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update zakat" + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": true,
+		"data":   z,
+	})
+}
+
+func (h *Handler) delete(c *gin.Context) {
+	id := c.Param("id")
+
+	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete zakat" + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": true})
+}
