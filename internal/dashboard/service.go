@@ -3,7 +3,7 @@ package dashboard
 import "context"
 
 type Service interface {
-	List(ctx context.Context) (Summary, error)
+	GetSummaryCounts(ctx context.Context, villagerID string) (Summary, error)
 }
 
 type service struct {
@@ -14,6 +14,6 @@ func NewService(r Repository) Service {
 	return &service{repo: r}
 }
 
-func (s *service) List(ctx context.Context) (Summary, error) {
-	return s.repo.Data(ctx)
+func (s *service) GetSummaryCounts(ctx context.Context, villagerID string) (Summary, error) {
+	return s.repo.GetSummaryCounts(ctx, villagerID)
 }

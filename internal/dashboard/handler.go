@@ -16,11 +16,12 @@ func NewHandler(svc Service) *Handler {
 
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	group := r.Group("/dashboard")
-	group.GET("", h.list)
+	group.GET("", h.getSummaryCounts)
 }
 
-func (h *Handler) list(c *gin.Context) {
-	z, err := h.svc.List(c.Request.Context())
+func (h *Handler) getSummaryCounts(c *gin.Context) {
+	villagerID := c.Query("villager_id")
+	z, err := h.svc.GetSummaryCounts(c.Request.Context(), villagerID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get dashboard data" + err.Error()})
 		return

@@ -7,17 +7,17 @@ import (
 )
 
 type Summary struct {
-	TotalZakat  			int 	`json:"total_zakat"`
-	TotalRiceZakat 		float32 `json:"total_rice_zakat"`
-	TotalCashZakat 		int   `json:"total_cash_zakat"`
+	TotalZakat  			int 		`json:"total_zakat"`
+	TotalRiceZakat 		float32	`json:"total_rice_zakat"`
+	TotalCashZakat 		int   	`json:"total_cash_zakat"`
 	TotalRiceCharity 	float32 `json:"total_rice_charity"`
-	TotalCashCharity	int 	`json:"total_cash_charity"`
+	TotalCashCharity	int 		`json:"total_cash_charity"`
 	TotalRiceAmount 	float32	`json:"total_rice_amount"`
-	TotalCashAmount 	int  	`json:"total_cash_amount"`
+	TotalCashAmount 	int  		`json:"total_cash_amount"`
 }
 
 type Repository interface {
-	Data(ctx context.Context) (Summary, error)
+	GetSummaryCounts(ctx context.Context, villagerID string) (Summary, error)
 }
 
 type pgRepository struct {
@@ -28,28 +28,24 @@ func NewRepository(db *pgxpool.Pool) Repository {
 	return &pgRepository{db: db}
 }
 
-func (r *pgRepository) Data(ctx context.Context) (Summary, error) {
-	rows, err := r.db.Query(ctx, GetSummaryCounts)
-	if err != nil {
-		return Summary{}, err
-	}
-	defer rows.Close()
+func (r *pgRepository) GetSummaryCounts(ctx context.Context, villagerID string) (Summary, error) {
+	var s Summary
+	var arg any
 
-	var result Summary
-	for rows.Next() {
-		var s Summary
-		if err := rows.Scan(
-			&s.TotalZakat,
-			&s.TotalRiceZakat,
-			&s.TotalCashZakat,
-			&s.TotalRiceCharity,
-			&s.TotalCashCharity,
-			&s.TotalRiceAmount,
-			&s.TotalCashAmount,
-		); err != nil {
-			return Summary{}, err
-		}
-		result = s
+	if villagerID == "" {
+		arg = nil
+	} else {
+		arg = villagerID
 	}
-	return result, rows.Err()
+
+	err := r.db.QueryRow(ctx, GetSummaryCounts, arg).Scan(
+		&s.TotalZakat,
+		&s.TotalRiceZakat,
+		&s.TotalCashZakat,
+		&s.TotalRiceCharity,
+		&s.TotalCashCharity,
+		&s.TotalRiceAmount,
+		&s.TotalCashAmount,
+	)
+	return s, err
 }
