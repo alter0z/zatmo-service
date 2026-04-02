@@ -15,7 +15,7 @@ func NewHandler(svc Service) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
-	group := r.Group("/dashboard")
+	group := r.Group("/api/v1/dashboard")
 	group.GET("", h.getSummaryCounts)
 	group.GET("/receivers", h.getReceiverCounts)
 }
