@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -22,7 +23,7 @@ type Receiver struct {
 }
 
 type Repository interface {
-	GetSummaryCounts(ctx context.Context, villagerID string) (Summary, error)
+	GetSummaryCounts(ctx context.Context, villagerID string, date *time.Time) (Summary, error)
 	GetReceiverCounts(ctx context.Context) (Receiver, error)
 }
 
@@ -34,17 +35,24 @@ func NewRepository(db *pgxpool.Pool) Repository {
 	return &pgRepository{db: db}
 }
 
-func (r *pgRepository) GetSummaryCounts(ctx context.Context, villagerID string) (Summary, error) {
+func (r *pgRepository) GetSummaryCounts(ctx context.Context, villagerID string, date *time.Time) (Summary, error) {
 	var s Summary
-	var arg any
+	var args [2]any
 
+	// $1 :: uuid
 	if villagerID == "" {
-		arg = nil
+			args[0] = nil
 	} else {
-		arg = villagerID
+			args[0] = villagerID
 	}
 
-	err := r.db.QueryRow(ctx, GetSummaryCounts, arg).Scan(
+	// $2 :: date
+	if date == nil {
+			args[1] = nil
+	} else {
+			args[1] = date.Format("2006-01-02")
+	}
+	err := r.db.QueryRow(ctx, GetSummaryCounts, args[0], args[1]).Scan(
 		&s.TotalZakat,
 		&s.TotalRiceZakat,
 		&s.TotalCashZakat,

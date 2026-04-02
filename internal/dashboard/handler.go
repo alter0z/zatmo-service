@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,9 +21,29 @@ func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	group.GET("/receivers", h.getReceiverCounts)
 }
 
+type ListQuery struct {
+    VillagerID string `form:"villager_id"`
+    Date       string `form:"date"`
+}
+
 func (h *Handler) getSummaryCounts(c *gin.Context) {
-	villagerID := c.Query("villager_id")
-	z, err := h.svc.GetSummaryCounts(c.Request.Context(), villagerID)
+	var q ListQuery
+	if err := c.ShouldBindQuery(&q); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var datePtr *time.Time
+	if q.Date != "" {
+		t, err := time.Parse("2006-01-02", q.Date)
+		if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD"})
+				return
+		}
+		datePtr = &t
+	}
+
+	z, err := h.svc.GetSummaryCounts(c.Request.Context(), q.VillagerID, datePtr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get dashboard data"})
 		return

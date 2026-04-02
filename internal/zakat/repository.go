@@ -49,7 +49,7 @@ func (r *pgRepository) List(
 	name string,
 	category *bool,
 	date *time.Time) ([]Zakat, error) {
-	var args [4]interface{}
+	var args [4]any
 
 	// $1 :: uuid
 	if villagerID == "" {

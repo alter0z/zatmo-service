@@ -10,7 +10,9 @@ const GetSummaryCounts = `
     COALESCE(SUM(CASE WHEN z.category = true  THEN z.amount      ELSE 0 END), 0) AS total_rice_amount,
     COALESCE(SUM(CASE WHEN z.category = false THEN z.amount      ELSE 0 END), 0) AS total_cash_amount
   FROM zakat as z
-  WHERE ($1::uuid IS NULL OR z.villager = $1::uuid);`
+  WHERE 
+    ($1::uuid IS NULL OR z.villager = $1::uuid)
+    AND ($2::date IS NULL OR (z.created_at AT TIME ZONE 'Asia/Jakarta')::date = $2::date);`
 
 const GetReceiverCounts = `
   SELECT 
