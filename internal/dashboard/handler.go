@@ -24,17 +24,25 @@ func (h *Handler) getSummaryCounts(c *gin.Context) {
 	villagerID := c.Query("villager_id")
 	z, err := h.svc.GetSummaryCounts(c.Request.Context(), villagerID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get dashboard data" + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get dashboard data"})
 		return
 	}
-	c.JSON(http.StatusOK, z)
+	c.JSON(http.StatusOK, gin.H{
+		"status": true,
+		"data":   z,
+		"message": "success",
+	})
 }
 
 func (h *Handler) getReceiverCounts(c *gin.Context) {
 	receiver, err := h.svc.GetReceiverCounts(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get receiver counts" + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get receiver counts"})
 		return
 	}
-	c.JSON(http.StatusOK, receiver)
+	c.JSON(http.StatusOK, gin.H{
+		"status": true,
+		"data":   receiver,
+		"message": "success",
+	})
 }
